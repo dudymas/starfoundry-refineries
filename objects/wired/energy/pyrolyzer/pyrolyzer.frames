@@ -1,0 +1,15 @@
+{
+  "frameGrid" : {
+    "size" : [32, 32],
+    "dimensions" : [1, 1],
+    "names" : [
+      [ "default" ]
+    ]
+  },
+  "aliases" : {
+    "default.default" : "default",
+    "idle" : "default",
+    "cook.0" : "default",
+    "cook.1" : "default"
+  }
+}

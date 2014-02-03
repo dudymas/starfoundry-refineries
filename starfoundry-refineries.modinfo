@@ -1,0 +1,12 @@
+{
+    "name": "starfoundry-refineries",
+    "version": "Beta v. Furious Koala",
+    "path": ".",
+    "dependencies": ["starfoundry"],
+    "metadata": {
+        "author": "Dudymas",
+        "version": "0.0.1",
+        "description": "Engineering gasm I just had to share. I'm so sorry. SO. SORRY.",
+        "support_url": "https://github.com/dudymas"
+    }
+}

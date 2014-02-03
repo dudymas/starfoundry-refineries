@@ -1,0 +1,14 @@
+{
+  "input" : [
+    { "item" : "titaniumbar", "count" : 1 },
+    { "item" : "stonefurnace", "count" : 1 },
+    { "item" : "steelbar", "count" : 1 },
+    { "item" : "energycrystal", "count" : 1 },
+    { "item" : "composite01material", "count" : 1 }
+  ],
+  "output" : {
+    "item" : "pyrolyzer",
+    "count" : 1
+  },
+  "groups" : [ "foundry", "all", "energy", "pipes" ]
+}

@@ -1,0 +1,85 @@
+{
+  "objectName" : "pyrolyzer",
+  "rarity" : "Uncommon",
+  "description" : "A titanium heating chamber that coaxes wood into separating out. Makes wood alcohol and pitch.",
+  "shortdescription" : "Pyrolyzer",
+  "race" : "generic",
+  "subtitle" : "Auto-tunes your pitch",
+  "category" : "wire",
+  "price" : 24000,
+  "objectType" : "wire",
+  "printable" : true,
+  "hydrophobic" : false,
+
+  "apexDescription" : "Smells awful, but good for making fuels and oils.",
+  "avianDescription" : "Just what I need... more tars on my feathers.",
+  "floranDescription" : "Coooksss thingss. Ooozess condimentsss. Barbeque anyone?",
+  "glitchDescription" : "Pyrolysis. Heats solids up till they break down.",
+  "humanDescription" : "This thing takes too long, but I guess it makes more use out of wood.",
+  "hylotlDescription" : "These oils trap water. How convenient.",
+
+  "lightColor" : [229, 218, 207],
+  "flickerDistance" : 0.2,
+  "flickerStrength" : 0.1,
+
+  "inventoryIcon" : "pyrolyzericon.png",
+  "orientations" : [
+    {
+      "dualImage" : "pyrolyzer.png:default",
+
+      "imagePosition" : [0, 0],
+      "frames" : 1,
+
+      "spaceScan" : 0.1,
+      "anchors" : [ "bottom" ]
+
+    }
+  ],
+
+  "scripts" : [
+    "/scripts/energy.lua",
+    "pyrolyzer.lua",
+    "/scripts/pipes/itempipes.lua",
+    "/scripts/pipes/liquidpipes.lua",
+    "/scripts/pipesapi.lua",
+    "/scripts/util.lua",
+    "/scripts/vec2.lua"
+  ],
+  "scriptDelta" : 5,
+
+  "animation" : "pyrolyzer.animation",
+  "animationParts" : {
+    "furnace" : "pyrolyzer.png"
+  },
+  "animationPosition" : [0, 0],
+
+  "soundEffect" : "/sfx/objects/campfire.wav",
+
+  "statusEffects" : [
+    {
+      "kind" : "Warmth",
+      "amount" : 60,
+      "range" : 7
+    }
+  ],
+  "inboundNodes" : [ [0, 0] ],
+
+  "itemNodes" : [ {"offset": [0, 0], "dir": [1, 0]}, {"offset": [2, 3], "dir": [0, -1]} ],
+  "liquidNodes" : [ {"offset": [3, 3], "dir": [1, 0]}, {"offset": [3, 0], "dir": [1, 0]} ],
+  "cookRate" : 0.5,
+  
+  "energyConsumptionRate" : 1,
+  "energyCapacity" : 50,
+  
+  "liquidCapacity" : 50000,
+  "liquidPushAmount" : 500,
+  "liquidPushRate" : 1,
+
+  "recipeGroup" : "pyrolyzer",
+  "openSounds" : [ "/sfx/objects/campfire_use.wav" ],
+  "slotCount" : 2,
+  "uiConfig" : "/interface/objectcrafting/pyrolyzer.config",
+  "frameCooldown" : 67,
+  "autoCloseCooldown" : 3600
+
+}
