@@ -7,7 +7,7 @@ function init(virtual)
     self.emptyProduct = {requirement = -1,  count = -1, name = "", byproduct = "", byproductQty = -1}
 
     self.conversions = {}
-    self.conversions["fullwood1"] = {requirement = 5,  count = 3, name = "charcoal", byproduct = "tar", byproductQty = 100}
+    self.conversions["fullwood1"] = {requirement = 5,  count = 3, name = "coalore", byproduct = "tar", byproductQty = 100}
     
     self.liquidMap = {}
     self.liquidMap["water"] = 1
@@ -43,6 +43,12 @@ function init(virtual)
     self.capacity = entity.configParameter("liquidCapacity")
     self.pushAmount = entity.configParameter("liquidPushAmount")
     self.pushRate = entity.configParameter("liquidPushRate")
+
+    if not storage.liquid then
+      storage.liquid = {}
+      storage.liquid[1] = nil
+      storage.liquid[2] = 0
+    end
   end
 end
 
@@ -58,7 +64,7 @@ function storedLiquidLevel()
   if storage.liquid and storage.liquid[2] then
     return storage.liquid[2]
   else
-    return nil
+    return 0
   end
 end
 
@@ -96,8 +102,12 @@ function resetTimer()
   self.cookTimer = 0
 end
 
+function cookTimerFinished()
+  return self.cookTimer >= self.cookRate
+end
+
 function updateTimer(timeDelta)
-  if self.cookTimer > self.cookRate then
+  if not cookTimerFinished() then
     self.cookTimer = self.cookTimer + timeDelta
   end
 end
@@ -109,15 +119,38 @@ end
 
 function onInteraction(args)
   local liqLevel = storedLiquidLevel() or "nada"
-  if storage then
-    world.logInfo("I gotz storaaage")
-    for k,v in pairs(storage) do
-      world.logInfo("I see " .. k)
-    end
+  local woodLev = storedOre() and storedOre().count or "nada"
+  if canCook() then
+    world.logInfo("I can cook schtuff :P I've been cookin fer " .. self.cookTimer)
   else
-    world.logInfo("no storage for me")
+    world.logInfo("No soup for you! >:-^ ")--snap!
+    if liquidAtCapacity() then
+      world.logInfo(" - liquidAtCapacity()")
+    end
+    if not sufficientOre() then
+      world.logInfo(" - not sufficientOre()")
+      if not product() then
+        world.logInfo(" - - product() is nil ")
+      end
+    end
+    if not roomForConversion() then
+      world.logInfo(" - not roomForConversion()")
+      if not roomForByproduct() then
+        world.logInfo(" - - not roomForByproduct()")
+        if storedLiquidLevel() > 0 and not (storedLiquidType() == product().byproduct) then
+          world.logInfo(" - - - already have a different liquid being stored ")
+        elseif (storedLiquidLevel() + product().byproductQty) >= self.capacity then
+          local cap = self.capacity or "zilch"
+          local bypAmnt = product().byproductQty or "itty bits"
+          world.logInfo(" - - - capacity at max ( " .. cap
+            .. " ) because we already store (".. liqLevel
+            ..") and need room for (".. bypAmnt
+            ..") ")
+        end
+      end
+    end
   end
-  return { "ShowPopup", {message = "imma cookur :3 I gotz " .. liqLevel .. " pitch, suckaa! ^_^"}}
+  return { "ShowPopup", {message = "imma cookur :3 I gotz " .. woodLev .. " wood and " .. liqLevel .. " pitch, suckaa! ^_^"}}
 end
 
 function main()
@@ -155,7 +188,7 @@ end
 
 function sufficientOre()
   local stored = storedOre()
-  if stored and not product() == self.emptyProduct then
+  if stored and not (product() == self.emptyProduct) then
     return stored.count >= product().requirement
   else
     return false
@@ -172,36 +205,43 @@ function roomForConversion()
 end
 
 function roomForByproduct()
-  if storedLiquidLevel() > 0 and not storedLiquidType() == product().byproduct then
+  if storedLiquidLevel() > 0 and not (storedLiquidType() == product().byproduct) then
     return false
   else
-    return (storedLiquidLevel() + product().byproductQty) > self.capacity
+    return (storedLiquidLevel() + product().byproductQty) < self.capacity
   end
 end
 
 function pullOre()
-  local pulledItem = pullItem(1, pulledItemConversionsFilter())
+  local pulledItem = pullItem(self.inputItemNodeId, pulledItemConversionsFilter())
   resetStoredOre(pulledItem)
 end
 
 function pulledItemConversionsFilter()
   local pullFilter = {}
   for matitem,conversion in pairs(self.conversions) do
-    pullFilter[matitem] = {conversion[1], conversion[1]}
+    pullFilter[matitem] = {conversion.requirement, conversion.requirement}
   end
   return pullFilter
 end
 
 function cook()
-  if self.cookTimer > self.cookRate then
-    processOres()
+  if cookTimerFinished() then
+    local success = tryProcessOres()
+    if success then
+      resetTimer()
+    end
   end
 end
 
-function processOres()
+function tryProcessOres()
   if roomForConversion() and tryPushingProduct() then
     storeByproducts()
     resetStoredOre()
+    return true
+  else
+    world.logInfo("Processing phailed D:")
+    return false
   end
 end
 
