@@ -7,20 +7,20 @@ function init(virtual)
     self.emptyProduct = {requirement = -1,  count = -1, name = "", byproduct = "", byproductQty = -1}
 
     self.conversions = {}
-    self.conversions["fullwood1"] = {requirement = 5,  count = 3, name = "coalore", byproduct = "tar", byproductQty = 100}
+    self.conversions["fullwood1"] = {requirement = 5,  count = 3, name = "coalore", byproduct = "tarliquid", byproductQty = 100}
     
     self.liquidMap = {}
     self.liquidMap["water"] = 1
     self.liquidMap["lava"] = 3
     self.liquidMap["poison"] = 4
     self.liquidMap["juice"] = 6
-    self.liquidMap["tar"] = 7
+    self.liquidMap["tarliquid"] = 7
 
     self.liquidMap[1] = "water"
     self.liquidMap[3] = "lava"
     self.liquidMap[4] = "poison"
     self.liquidMap[6] = "juice"
-    self.liquidMap[7] = "tar"
+    self.liquidMap[7] = "tarliquid"
 
     --upcoming liquids
     --self.liquidMap["hotPitch"] = -1 -- made from boiler and also output by pyrolyzer (later)
@@ -34,15 +34,15 @@ function init(virtual)
 
     if storage.state == nil then storage.state = false end
     
-    self.cookRate = entity.configParameter("cookRate")
-    self.cookTimer = 0
+    genericConverter.config(entity.configParameter)
+
     self.inputItemNodeId = 1
     self.outputItemNodeId = 2
     self.inputLiquidNodeId = 1
     self.outputLiquidNodeId = 2
     self.capacity = entity.configParameter("liquidCapacity")
     self.pushAmount = entity.configParameter("liquidPushAmount")
-    self.pushRate = entity.configParameter("liquidPushRate")
+    self.liquidPushRate = entity.configParameter("liquidPushRate") or 100
 
     if not storage.liquid then
       storage.liquid = {}
@@ -72,6 +72,37 @@ function storedLiquidType()
   return self.liquidMap[storedLiquidID()]
 end
 
+function drip()
+  if storedLiquidLevel() > 0 and self.liquidPushRate then
+    local liquidPacketSize = math.min(storedLiquidLevel(), self.liquidPushRate)
+    local packet = {storedLiquidID(), liquidPacketSize}
+    local success = pushLiquid(self.outputLiquidNodeId, packet)
+    if success then
+      local amount = -(success ~= true and success or liquidPacketSize)
+      world.logInfo("reducing byproduct by " .. amount)
+      updateLiquidLevel(amount)
+    end
+  end
+end
+
+function setLiquidLevel( level )
+  if level < 0 then
+    storage.liquid[2] = 0
+  elseif level > self.capacity then
+    storage.liquid[2] = self.capacity --TODO: push excess if possible
+  else
+    storage.liquid[2] = level
+  end
+end
+
+function updateLiquidLevel( delta )
+  local leftover = 0
+  if storedLiquidType() and (storedLiquidLevel() > 0 or delta > 0) then
+    leftover = storedLiquidLevel() + delta
+    setLiquidLevel(leftover)
+  end
+end
+
 function clearLiquid()
   if storedLiquidLevel() ~= nil and storedLiquidLevel() == 0 then
     storage.liquid = {}
@@ -98,20 +129,6 @@ function product()
   end
 end
 
-function resetTimer()
-  self.cookTimer = 0
-end
-
-function cookTimerFinished()
-  return self.cookTimer >= self.cookRate
-end
-
-function updateTimer(timeDelta)
-  if not cookTimerFinished() then
-    self.cookTimer = self.cookTimer + timeDelta
-  end
-end
-
 function die()
   energy.die()
   exploooosions()
@@ -121,7 +138,7 @@ function onInteraction(args)
   local liqLevel = storedLiquidLevel() or "nada"
   local woodLev = storedOre() and storedOre().count or "nada"
   if canCook() then
-    world.logInfo("I can cook schtuff :P I've been cookin fer " .. self.cookTimer)
+    world.logInfo("I can cook schtuff :P I've been cookin fer " .. genericConverter.cookTimer)
   else
     world.logInfo("No soup for you! >:-^ ")--snap!
     if liquidAtCapacity() then
@@ -138,7 +155,9 @@ function onInteraction(args)
       if not roomForByproduct() then
         world.logInfo(" - - not roomForByproduct()")
         if storedLiquidLevel() > 0 and not (storedLiquidType() == product().byproduct) then
-          world.logInfo(" - - - already have a different liquid being stored ")
+          world.logInfo(" - - - already have a different liquid (".. storedLiquidType()
+            ..") being stored. Can't store (".. product().byproduct
+            ..")")
         elseif (storedLiquidLevel() + product().byproductQty) >= self.capacity then
           local cap = self.capacity or "zilch"
           local bypAmnt = product().byproductQty or "itty bits"
@@ -157,7 +176,7 @@ function main()
   mainUpdate()
   if canCook() then
     cook()
-    updateTimer(entity.dt())
+    genericConverter.updateTimer(entity.dt())
   end
 end
 
@@ -165,6 +184,7 @@ function mainUpdate()
   energy.update()
   pipes.update(entity.dt())
   updateOre()
+  drip()
 end
 
 function updateOre()
@@ -226,10 +246,10 @@ function pulledItemConversionsFilter()
 end
 
 function cook()
-  if cookTimerFinished() then
+  if genericConverter.cookTimerFinished() then
     local success = tryProcessOres()
     if success then
-      resetTimer()
+      genericConverter.resetTimer()
     end
   end
 end
@@ -253,7 +273,7 @@ end
 
 function storeByproducts()
   storage.liquid[1] = self.liquidMap[product().byproduct]
-  storage.liquid[2] = storage.liquid[2] + product().byproductQty
+  updateLiquidLevel(product().byproductQty)
 end
 
 function exploooosions()
