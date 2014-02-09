@@ -1,0 +1,94 @@
+{
+  "objectName" : "coker_basic",
+  "rarity" : "Uncommon",
+  "description" : "Breaks down heavy tars with water into lighter oils. Needle coke is a byproduct.",
+  "shortdescription" : "Compact Coker",
+  "race" : "generic",
+  "subtitle" : "Doesn't make sodas",
+  "category" : "wire",
+  "price" : 124000,
+  "objectType" : "wire",
+  "printable" : true,
+  "hydrophobic" : false,
+
+  "apexDescription" : "A good way to distribute the concentrated harm of tar over a larger area...",
+  "avianDescription" : "I like my cokes with cakes... just not ones moistened with ammonia.",
+  "floranDescription" : "Hsssss, this water is poisonouss even for me.",
+  "glitchDescription" : "Hydrolysis. Making sticky carbon chains break into slippery ones.",
+  "humanDescription" : "I wonder if these sours make a good molotov cocktail...",
+  "hylotlDescription" : "Oh the things you can emulsify if given sufficient energy...",
+
+  "lightColor" : [229, 218, 207],
+  "flickerDistance" : 0.1,
+  "flickerStrength" : 0.01,
+
+  "inventoryIcon" : "coker_basicicon.png",
+  "orientations" : [
+    {
+      "dualImage" : "coker_basic.png:default",
+
+      "imagePosition" : [0, 0],
+      "frames" : 1,
+
+      "spaceScan" : 0.1,
+      "anchors" : [ "bottom" ]
+
+    }
+  ],
+
+  "scripts" : [
+    "/scripts/energy.lua",
+    "/scripts/conversion/genericConverter.lua",
+    "/scripts/conversion/liquidConverter.lua",
+    "/scripts/conversion/solidConverter.lua",
+    "coker_basic.lua",
+    "/scripts/pipes/itempipes.lua",
+    "/scripts/pipes/liquidpipes.lua",
+    "/scripts/pipesapi.lua",
+    "/scripts/util.lua",
+    "/scripts/vec2.lua"
+  ],
+  "scriptDelta" : 5,
+
+  "animation" : "coker_basic.animation",
+  "animationParts" : {
+    "furnace" : "coker_basic.png"
+  },
+  "animationPosition" : [0, 0],
+
+  "soundEffect" : "/sfx/objects/campfire.wav",
+
+  "statusEffects" : [
+    {
+      "kind" : "Warmth",
+      "amount" : 50,
+      "range" : 10
+    }
+  ],
+  "inboundNodes" : [ [0, 0] ],
+
+  "itemNodes" : [ {"offset": [1, 0], "dir": [0, -1]} ],
+  "liquidNodes" : [ 
+    {"offset": [2, 1], "dir": [0, 0]} ,
+    {"offset": [0, 1], "dir": [0, 0]} ,
+    {"offset": [0, 6], "dir": [0, 0]} ,
+    {"offset": [1, 6], "dir": [0, 0]} ,
+    {"offset": [2, 6], "dir": [0, 0]}
+    ],
+  "cookRate" : 5.5,
+  
+  "energyConsumptionRate" : 1,
+  "energyCapacity" : 50,
+  
+  "liquidCapacity" : 100000,
+  "liquidPushAmount" : 500,
+  "liquidPushRate" : 1,
+
+  "recipeGroup" : "coker_basic",
+  "openSounds" : [ "/sfx/objects/campfire_use.wav" ],
+  "slotCount" : 2,
+  "uiConfig" : "/interface/objectcrafting/coker_basic.config",
+  "frameCooldown" : 67,
+  "autoCloseCooldown" : 3600
+
+}
