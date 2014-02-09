@@ -76,6 +76,10 @@
   "liquidPushAmount" : 500,
   "liquidPushRate" : 1,
 
+  "conversions" : {
+    "fullwood1" : { "requirement" : 5,  "count" : 3, "name" : "coalore", "byproduct" : "tar", "byproductQty" : 100}
+  },
+
   "recipeGroup" : "pyrolyzer",
   "openSounds" : [ "/sfx/objects/campfire_use.wav" ],
   "slotCount" : 2,

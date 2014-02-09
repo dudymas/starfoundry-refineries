@@ -1,6 +1,8 @@
 
 genericConverter = {}
 
+genericConverter.emptyProduct = {requirement = -1,  count = -1, name = "empty", byproduct = "nil", byproductQty = -1}
+
 genericConverter.liquidMap = {}
 genericConverter.liquidMap["water"] = 1
 genericConverter.liquidMap["lava"] = 3
@@ -29,7 +31,7 @@ function genericConverter.config( configFctn )
 	genericConverter.cookTimer = 0
 
 	genericConverter.cookRate = configFctn("cookRate")
-	genericConverter.conversions = configFctn("conversions")
+	genericConverter.conversions = configFctn("conversions") or {}
 end
 
 function genericConverter.resetTimer()
@@ -44,4 +46,48 @@ function genericConverter.updateTimer(timeDelta)
   if not genericConverter.cookTimerFinished() then
     genericConverter.cookTimer = genericConverter.cookTimer + timeDelta
   end
+end
+
+function genericConverter.product(ingredients)
+	if not ingredients then
+		return genericConverter.emptyProduct
+	elseif ingredients.name then
+  	return genericConverter.convert(ingredients) or genericConverter.emptyProduct
+  else
+  	local result = {}
+  	for i,v in ipairs(ingredients) do
+  		if genericConverter.canConvert(v) then
+  			result[i] = genericConverter.convert(v)
+  		end
+  	end
+  	if table.getn(result) == 0 then
+  		return genericConverter.emptyProduct
+  	else
+  		return result
+  	end
+  end
+end
+
+function genericConverter.productNotEmpty(ingredients)
+	return genericConverter.product(ingredients).byproduct ~= genericConverter.emptyProduct
+end
+
+function genericConverter.convert( item )
+	if item.name then
+		return genericConverter.conversions[item.name]
+	else
+		return genericConverter.conversions[item]
+	end
+end
+
+function genericConverter.canConvert( item )
+	return genericConverter.convert(item) ~= nil
+end
+
+function genericConverter.conversionsFilter()
+  local pullFilter = {}
+  for matitem,conversion in pairs(genericConverter.conversions) do
+    pullFilter[matitem] = {conversion.requirement, conversion.requirement}
+  end
+  return pullFilter
 end

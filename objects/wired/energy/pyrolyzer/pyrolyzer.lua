@@ -4,15 +4,10 @@ function init(virtual)
     energy.init()
     pipes.init({liquidPipe, itemPipe}) --ohsnap
     
-    self.emptyProduct = {requirement = -1,  count = -1, name = "", byproduct = "", byproductQty = -1}
-
-    self.conversions = {}
-    self.conversions["fullwood1"] = {requirement = 5,  count = 3, name = "coalore", byproduct = "tar", byproductQty = 100}
-    
     if storage.state == nil then storage.state = false end
     
     genericConverter.config(entity.configParameter)
-
+    
     self.inputItemNodeId = 1
     self.outputItemNodeId = 2
     self.inputLiquidNodeId = 1
@@ -56,7 +51,6 @@ function drip()
     local success = pushLiquid(self.outputLiquidNodeId, packet)
     if success then
       local amount = -(success ~= true and success or liquidPacketSize)
-      world.logInfo("reducing byproduct by " .. amount)
       updateLiquidLevel(amount)
     end
   end
@@ -98,14 +92,6 @@ function resetStoredOre(itm)
   storage.ore = itm or {}
 end
 
-function product()
-  if storedOre() then
-    return self.conversions[storedOre().name] or self.emptyProduct
-  else
-    return self.emptyProduct
-  end
-end
-
 function die()
   energy.die()
   exploooosions()
@@ -123,21 +109,21 @@ function onInteraction(args)
     end
     if not sufficientOre() then
       world.logInfo(" - not sufficientOre()")
-      if not product() then
-        world.logInfo(" - - product() is nil ")
-      end
     end
-    if not roomForConversion() then
+    if not genericConverter.productNotEmpty(storedOre()) then
+      world.logInfo(" - product() is empty... can't convert stored ore ")
+    elseif not roomForConversion() then
       world.logInfo(" - not roomForConversion()")
       if not roomForByproduct() then
         world.logInfo(" - - not roomForByproduct()")
-        if storedLiquidLevel() > 0 and not (storedLiquidType() == product().byproduct) then
+        local product = genericConverter.product(storedOre())
+        if storedLiquidLevel() > 0 and not (storedLiquidType() == product.byproduct) then
           world.logInfo(" - - - already have a different liquid (".. storedLiquidType()
-            ..") being stored. Can't store (".. product().byproduct
+            ..") being stored. Can't store (".. product.byproduct
             ..")")
-        elseif (storedLiquidLevel() + product().byproductQty) >= self.capacity then
+        elseif (storedLiquidLevel() + product.byproductQty) >= self.capacity then
           local cap = self.capacity or "zilch"
-          local bypAmnt = product().byproductQty or "itty bits"
+          local bypAmnt = genericConverter.product(storedOre()).byproductQty or "itty bits"
           world.logInfo(" - - - capacity at max ( " .. cap
             .. " ) because we already store (".. liqLevel
             ..") and need room for (".. bypAmnt
@@ -185,15 +171,15 @@ end
 
 function sufficientOre()
   local stored = storedOre()
-  if stored and not (product() == self.emptyProduct) then
-    return stored.count >= product().requirement
+  if stored and genericConverter.productNotEmpty(storedOre()) then
+    return stored.count >= genericConverter.product(stored).requirement
   else
     return false
   end
 end
 
 function roomForConversion()
-  local conversionProduct = product()
+  local conversionProduct = genericConverter.product(storedOre())
   if conversionProduct == self.emptyProduct or not roomForByproduct() then
     return false --can't determine if there's room without a product. default false
   else
@@ -202,24 +188,16 @@ function roomForConversion()
 end
 
 function roomForByproduct()
-  if storedLiquidLevel() > 0 and not (storedLiquidType() == product().byproduct) then
+  if storedLiquidLevel() > 0 and not (storedLiquidType() == genericConverter.product(storedOre()).byproduct) then
     return false
   else
-    return (storedLiquidLevel() + product().byproductQty) < self.capacity
+    return (storedLiquidLevel() + genericConverter.product(storedOre()).byproductQty) < self.capacity
   end
 end
 
 function pullOre()
-  local pulledItem = pullItem(self.inputItemNodeId, pulledItemConversionsFilter())
+  local pulledItem = pullItem(self.inputItemNodeId, genericConverter.conversionsFilter())
   resetStoredOre(pulledItem)
-end
-
-function pulledItemConversionsFilter()
-  local pullFilter = {}
-  for matitem,conversion in pairs(self.conversions) do
-    pullFilter[matitem] = {conversion.requirement, conversion.requirement}
-  end
-  return pullFilter
 end
 
 function cook()
@@ -243,14 +221,14 @@ function tryProcessOres()
 end
 
 function tryPushingProduct()
-  local conversion = product()
+  local conversion = genericConverter.product(storedOre())
   local itemProduced = {name = conversion.name, count = conversion.count, data = {}}
   return pushItem(self.outputItemNodeId, itemProduced)
 end
 
 function storeByproducts()
-  storage.liquid[1] = genericConverter.liquidMap[product().byproduct]
-  updateLiquidLevel(product().byproductQty)
+  storage.liquid[1] = genericConverter.liquidMap[genericConverter.product(storedOre()).byproduct]
+  updateLiquidLevel(genericConverter.product(storedOre()).byproductQty)
 end
 
 function exploooosions()
@@ -275,11 +253,11 @@ function onItemPut(item, nodeId)
 end
 
 function canStoreItem( item )
-  return item and item.name and not storedOre() and self.conversions[item.name]
+  return item and item.name and not storedOre() and genericConverter.canConvert(item)
 end
 
 function tryConversion( item )
-  local conversion = self.conversions[item.name]
+  local conversion = genericConverter.convert(item.name)
   if item.count >= conversion.requirement then
     item.count = conversion.requirement
     resetStoredOre(item)
