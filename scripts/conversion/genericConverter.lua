@@ -16,6 +16,14 @@ genericConverter.liquidMap[4] = "poison"
 genericConverter.liquidMap[6] = "juice"
 genericConverter.liquidMap[7] = "tar"
 
+getn = getn or function ( map )
+	local result = 0
+	for i,_ in ipairs(map) do
+		result = i
+	end
+	return result
+end
+
     --upcoming liquids
     --self.liquidMap["hotPitch"] = -1 -- made from boiler and also output by pyrolyzer (later)
     --self.liquidMap["gaseousWoodAlcohol"] = -1 -- byproduct from pyrolyzing wood
@@ -32,6 +40,27 @@ function genericConverter.config( configFctn )
 
 	genericConverter.cookRate = configFctn("cookRate")
 	genericConverter.conversions = configFctn("conversions") or {}
+end
+
+function genericConverter.statusMessage( ingredients )
+	local result = "Status: \n"
+	if ingredients then
+		if ingredients.name then
+			result = result .. "Trying to convert "..ingredients.name..".\n"
+		end
+		if genericConverter.canConvert(ingredients) then
+			local conversion = genericConverter.convert(ingredients)
+			result = result .. "I can convert this into "..conversion.name.."\n"..
+				"with a byproduct of "..conversion.byproduct..".\n"..
+				"This requires "..conversion.requirement.." of "..ingredients.name..".\n"
+		else
+			result = result .. "I cannot find a conversion for this."
+		end
+	else
+		result = result .. "There are no ingredients to convert.\n"
+	end
+	result = result .. "There are "..getn(genericConverter.conversions).." conversions that I know of."
+	return result
 end
 
 function genericConverter.resetTimer()

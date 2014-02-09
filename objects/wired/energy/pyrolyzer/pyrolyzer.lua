@@ -94,45 +94,15 @@ end
 
 function die()
   energy.die()
-  exploooosions()
 end
 
 function onInteraction(args)
-  local liqLevel = storedLiquidLevel() or "nada"
-  local woodLev = storedOre() and storedOre().count or "nada"
-  if canCook() then
-    world.logInfo("I can cook schtuff :P I've been cookin fer " .. genericConverter.cookTimer)
-  else
-    world.logInfo("No soup for you! >:-^ ")--snap!
-    if liquidAtCapacity() then
-      world.logInfo(" - liquidAtCapacity()")
-    end
-    if not sufficientOre() then
-      world.logInfo(" - not sufficientOre()")
-    end
-    if not genericConverter.productNotEmpty(storedOre()) then
-      world.logInfo(" - product() is empty... can't convert stored ore ")
-    elseif not roomForConversion() then
-      world.logInfo(" - not roomForConversion()")
-      if not roomForByproduct() then
-        world.logInfo(" - - not roomForByproduct()")
-        local product = genericConverter.product(storedOre())
-        if storedLiquidLevel() > 0 and not (storedLiquidType() == product.byproduct) then
-          world.logInfo(" - - - already have a different liquid (".. storedLiquidType()
-            ..") being stored. Can't store (".. product.byproduct
-            ..")")
-        elseif (storedLiquidLevel() + product.byproductQty) >= self.capacity then
-          local cap = self.capacity or "zilch"
-          local bypAmnt = genericConverter.product(storedOre()).byproductQty or "itty bits"
-          world.logInfo(" - - - capacity at max ( " .. cap
-            .. " ) because we already store (".. liqLevel
-            ..") and need room for (".. bypAmnt
-            ..") ")
-        end
-      end
-    end
+  local statusMessage = genericConverter.statusMessage(storedOre()) .. "\n\n"
+  if storedLiquidLevel() > 0 then
+    statusMessage = statusMessage..
+      "There is "..storedLiquidLevel().." of "..storedLiquidType()
   end
-  return { "ShowPopup", {message = "imma cookur :3 I gotz " .. woodLev .. " wood and " .. liqLevel .. " pitch, suckaa! ^_^"}}
+  return { "ShowPopup", {message = statusMessage}}
 end
 
 function main()
@@ -229,13 +199,6 @@ end
 function storeByproducts()
   storage.liquid[1] = genericConverter.liquidMap[genericConverter.product(storedOre()).byproduct]
   updateLiquidLevel(genericConverter.product(storedOre()).byproductQty)
-end
-
-function exploooosions()
-  --determine if we are working on any material
-  --if so, and our liquids are above the explosive limit
-  --spew flames
-  --otherwise just dump a % of liquids
 end
 
 function beforeItemPut(item, nodeId)
