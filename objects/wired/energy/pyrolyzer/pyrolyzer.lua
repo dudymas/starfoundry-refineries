@@ -7,31 +7,8 @@ function init(virtual)
     self.emptyProduct = {requirement = -1,  count = -1, name = "", byproduct = "", byproductQty = -1}
 
     self.conversions = {}
-    self.conversions["fullwood1"] = {requirement = 5,  count = 3, name = "coalore", byproduct = "tarliquid", byproductQty = 100}
+    self.conversions["fullwood1"] = {requirement = 5,  count = 3, name = "coalore", byproduct = "tar", byproductQty = 100}
     
-    self.liquidMap = {}
-    self.liquidMap["water"] = 1
-    self.liquidMap["lava"] = 3
-    self.liquidMap["poison"] = 4
-    self.liquidMap["juice"] = 6
-    self.liquidMap["tarliquid"] = 7
-
-    self.liquidMap[1] = "water"
-    self.liquidMap[3] = "lava"
-    self.liquidMap[4] = "poison"
-    self.liquidMap[6] = "juice"
-    self.liquidMap[7] = "tarliquid"
-
-    --upcoming liquids
-    --self.liquidMap["hotPitch"] = -1 -- made from boiler and also output by pyrolyzer (later)
-    --self.liquidMap["gaseousWoodAlcohol"] = -1 -- byproduct from pyrolyzing wood
-    --self.liquidMap["woodAlcohol"] = -1 -- made in a condenser by processing gaseousWoodAlcohol
-    --self.liquidMap["bitumen"] = -1 -- made by pyrolyzing tar blocks... product will be asphalt
-    --self.liquidMap["synbit"] = -1 -- made by pyrolyzing tar when there is wood alcohol in pyrolyzer tank
-    --self.liquidMap["sourWater"] = -1 -- made in coker, from adding water to hot pitch/tar
-    --self.liquidMap["wetCoke"] = -1 -- product from coker... separates into sour water and needle coke in a pneumatic pump
-    --self.liquidMap["pretrol"] = -1 -- byproduct from coker and the mixture of water and hot pitch
-
     if storage.state == nil then storage.state = false end
     
     genericConverter.config(entity.configParameter)
@@ -69,7 +46,7 @@ function storedLiquidLevel()
 end
 
 function storedLiquidType()
-  return self.liquidMap[storedLiquidID()]
+  return genericConverter.liquidMap[storedLiquidID()]
 end
 
 function drip()
@@ -272,7 +249,7 @@ function tryPushingProduct()
 end
 
 function storeByproducts()
-  storage.liquid[1] = self.liquidMap[product().byproduct]
+  storage.liquid[1] = genericConverter.liquidMap[product().byproduct]
   updateLiquidLevel(product().byproductQty)
 end
 
