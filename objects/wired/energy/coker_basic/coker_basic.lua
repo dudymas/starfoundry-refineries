@@ -1,44 +1,37 @@
 function init(virtual)
   entity.setInteractive(true)
   if not virtual then
-  energy.init()
-  pipes.init({liquidPipe, itemPipe}) --ohsnap
-  
-  self.emptyProduct = {requirement = -1,  count = -1, name = "", byproduct = "", byproductQty = -1}
+    energy.init()
+    pipes.init({liquidPipe, itemPipe}) --ohsnap
+    
+    self.emptyProduct = {requirement = -1,  count = -1, name = "", byproduct = "", byproductQty = -1}
 
-  self.conversions = {}
-  self.conversions["tar"] = {requirement = 5,  count = 3, name = "coke", byproduct = "sourWater", byproductQty = 100}
+    if storage.state == nil then storage.state = false end
 
-  --upcoming liquids
-  --self.liquidMap["hotPitch"] = -1 -- made from boiler and also output by pyrolyzer (later)
-  --self.liquidMap["gaseousWoodAlcohol"] = -1 -- byproduct from pyrolyzing wood
-  --self.liquidMap["woodAlcohol"] = -1 -- made in a condenser by processing gaseousWoodAlcohol
-  --self.liquidMap["bitumen"] = -1 -- made by pyrolyzing tar blocks... product will be asphalt
-  --self.liquidMap["synbit"] = -1 -- made by pyrolyzing tar when there is wood alcohol in pyrolyzer tank
-  self.liquidMap["sourWater"] = 20 -- made in coker, from adding water to hot pitch/tar
-  --self.liquidMap["wetCoke"] = -1 -- product from advanced coker... separates into sour water and needle coke in a pneumatic pump
-  --self.liquidMap["pretrol"] = -1 -- byproduct from coker and the mixture of water and hot pitch
+    genericConverter.config(entity.configParameter)
 
-  if storage.state == nil then storage.state = false end
+    self.drains = entity.configParameter("drains") or {}
+    self.liquidDrains = entity.configParameter("liquidDrains") or {}
+    self.solidDrains = entity.configParameter("solidDrains") or {}
+    
+    self.cookRate = entity.configParameter("cookRate")
+    self.cookTimer = 0
+    self.capacity = entity.configParameter("liquidCapacity")
+    self.pushAmount = entity.configParameter("liquidPushAmount")
+    self.pushRate = entity.configParameter("liquidPushRate")
 
-  self.drains = entity.configParameter("drains") or {}
-  self.liquidDrains = entity.configParameter("liquidDrains") or {}
-  self.solidDrains = entity.configParameter("solidDrains") or {}
-  
-  self.cookRate = entity.configParameter("cookRate")
-  self.cookTimer = 0
-  self.capacity = entity.configParameter("liquidCapacity")
-  self.pushAmount = entity.configParameter("liquidPushAmount")
-  self.pushRate = entity.configParameter("liquidPushRate")
-
+    storage.liquids = {}
+    storage.allowedLiquids = {"water","tar","sourWater","crude","wetCoke"}
+    storage.storageLimit = {}
+    self.defaultLimit = 1000
   end
 end
 
 function main()
-  local products = genericConverter:cook()
+  local products = genericConverter.cook(storage.liquids, storage.solids)
   if products then
     for k,v in pairs(products) do
-      storage.products[k] = storage.products[k] + v
+      tryToStore(k, v)
     end
   end
   drain()
@@ -56,6 +49,37 @@ function drain()
       storage.products[k] = v - result
     end
   end
+end
+
+function tryToStore( item, quantity )
+  if isLiquid(item) then
+    local excess = tryToStoreLiquid(item, quantity)
+  else
+    local excess = tryToStoreSolid(item, quantity)
+  end
+end
+
+function tryToStoreLiquid( liquidName, quantity )
+  if canStoreLiquid(liquidName) then
+    local excess = updateLiquid(liquidName, quantity)
+    return excess
+  end
+  return 0
+end
+
+function canStoreLiquid( liquidName )
+  return self.allowedLiquids[liquidName] ~= nil
+end
+
+function updateLiquid( liquidName, quantity )
+  local stored = storage.liquids[liquidName] or 0
+  local excess = (stored + quantity) - getLimit(liquidName)
+  storage.liquids[liquidName] = (stored + quantity) - excess
+  return excess
+end
+
+function getLimit( itemName )
+  return self.storageLimit[itemName] or self.defaultLimit
 end
 
 function tryDrain(type, amnt)
@@ -91,5 +115,5 @@ function getValidDrains( identifier )
 end
 
 function isLiquid( identifier )
-  return self.liquidMap[identifier] ~= nil
+  return genericConverter.liquidMap[identifier] ~= nil
 end
