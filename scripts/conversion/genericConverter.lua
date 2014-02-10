@@ -40,6 +40,13 @@ function genericConverter.config( configFctn )
 
 	genericConverter.cookRate = configFctn("cookRate")
 	genericConverter.conversions = configFctn("conversions") or {}
+	genericConverter.productIngredients = configFctn("productIngredients") or {}
+
+	for ingredientName,conversion in pairs(genericConverter.conversions) do
+		local productIngredients = genericConverter.productIngredients[conversion.name] or {}
+		productIngredients[ingredientName] = conversion.requirement
+		genericConverter.productIngredients[conversion.name] = productIngredients
+	end
 end
 
 function genericConverter.statusMessage( ingredients )
@@ -77,27 +84,29 @@ function genericConverter.updateTimer(timeDelta)
   end
 end
 
-function genericConverter.product(ingredients)
+function genericConverter.product( ingredients )
 	if not ingredients then
 		return genericConverter.emptyProduct
 	elseif ingredients.name then
   	return genericConverter.convert(ingredients) or genericConverter.emptyProduct
   else
   	local result = {}
-  	for i,v in ipairs(ingredients) do
-  		if genericConverter.canConvert(v) then
-  			result[i] = genericConverter.convert(v)
+  	local haveResults = false
+  	for _,ingredient in pairs(ingredients) do
+  		if genericConverter.canConvert(ingredient) then
+  			local conversion = genericConverter.convert(ingredient)
+  			if conversion.requirement and ingredient.count and conversion.requirement <= ingredient.count then
+  				result[conversion.name] = conversion.count
+  				haveResults = true
+  				return result --only allow one conversion for now.. simultaneous is incoming later
+  			end
   		end
   	end
-  	if table.getn(result) == 0 then
-  		return genericConverter.emptyProduct
-  	else
-  		return result
-  	end
+  	return haveResults and result or genericConverter.emptyProduct
   end
 end
 
-function genericConverter.productNotEmpty(ingredients)
+function genericConverter.productNotEmpty( ingredients )
 	return genericConverter.product(ingredients).byproduct ~= genericConverter.emptyProduct
 end
 
@@ -119,4 +128,34 @@ function genericConverter.conversionsFilter()
     pullFilter[matitem] = {conversion.requirement, conversion.requirement}
   end
   return pullFilter
+end
+
+function genericConverter.cook( ... )
+	local ingredients = genericConverter.flattenIngredients(args)
+	local products = genericConverter.product(ingredients)
+	if products ~= genericConverter.emptyProduct then
+		return genericConverter.productsAndConsumedIngredients(products, ingredients)
+	end
+end
+
+function genericConverter.flattenIngredients( ingredientArrays )
+	local result = {}
+	for _,itemMap in ipairs(ingredientArrays) do
+		for itemName,ingredient in ipairs(itemMap) do
+			ingredient = ingredient.name and ingredient or {name = itemName, count = ingredient}
+  		result[ingredientName] = ingredient
+		end
+	end
+	return result
+end
+
+function genericConverter.productsAndConsumedIngredients( products, ingredients )
+	local result = products
+	for productName,amount in pairs(products) do
+		local consumedIngredients = genericConverter.productIngredients[productName]
+		for ingredientName,amountConsumed in pairs(consumedIngredients) do
+			result[ingredientName] = ingredients[ingredientName].count - amountConsumed
+		end
+	end
+	return result
 end
