@@ -13,7 +13,7 @@ function init(virtual)
     self.inputLiquidNodeId = 1
     self.outputLiquidNodeId = 2
     self.capacity = entity.configParameter("liquidCapacity")
-    self.pushAmount = entity.configParameter("liquidPushAmount")
+    self.liquidPushAmount = entity.configParameter("liquidPushAmount")
     self.liquidPushRate = entity.configParameter("liquidPushRate") or 100
 
     if not storage.liquid then
@@ -45,8 +45,8 @@ function storedLiquidType()
 end
 
 function drip()
-  if storedLiquidLevel() > 0 and self.liquidPushRate then
-    local liquidPacketSize = math.min(storedLiquidLevel(), self.liquidPushRate)
+  if storedLiquidLevel() > 0 and self.liquidPushAmount then
+    local liquidPacketSize = math.min(storedLiquidLevel(), self.liquidPushAmount)
     local packet = {storedLiquidID(), liquidPacketSize}
     local success = pushLiquid(self.outputLiquidNodeId, packet)
     if success then

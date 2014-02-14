@@ -73,11 +73,11 @@
   "energyCapacity" : 50,
   
   "liquidCapacity" : 50000,
-  "liquidPushAmount" : 500,
+  "liquidPushAmount" : 100,
   "liquidPushRate" : 1,
 
   "conversions" : {
-    "fullwood1" : { "requirement" : 5,  "count" : 3, "name" : "coalore", "byproduct" : "tar", "byproductQty" : 100}
+    "fullwood1" : { "requirement" : 5,  "count" : 3, "name" : "coalore", "byproduct" : "tar", "byproductQty" : 700}
   },
 
   "recipeGroup" : "pyrolyzer",
