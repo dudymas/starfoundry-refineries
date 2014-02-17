@@ -39,8 +39,6 @@
   "scripts" : [
     "/scripts/energy.lua",
     "/scripts/conversion/genericConverter.lua",
-    "/scripts/conversion/liquidConverter.lua",
-    "/scripts/conversion/solidConverter.lua",
     "coker_basic.lua",
     "/scripts/pipes/itempipes.lua",
     "/scripts/pipes/liquidpipes.lua",
@@ -69,20 +67,46 @@
 
   "itemNodes" : [ {"offset": [1, 0], "dir": [0, -1]} ],
   "liquidNodes" : [ 
-    {"offset": [2, 1], "dir": [0, 0]} ,
-    {"offset": [0, 1], "dir": [0, 0]} ,
-    {"offset": [0, 6], "dir": [0, 0]} ,
-    {"offset": [1, 6], "dir": [0, 0]} ,
-    {"offset": [2, 6], "dir": [0, 0]}
+    {"offset": [2, 1], "dir": [1, 0]} ,
+    {"offset": [0, 1], "dir": [-1, 0]} ,
+    {"offset": [0, 6], "dir": [-1, 0]} ,
+    {"offset": [1, 6], "dir": [0, 1]} ,
+    {"offset": [2, 6], "dir": [1, 0]}
     ],
-  "cookRate" : 5.5,
+  "cookRate" : 7.5,
+
+  "storageLimit" : {
+    "sourCoke" : 700,
+    "tar" : 2800,
+    "water" : 700
+    },
   
   "energyConsumptionRate" : 1,
   "energyCapacity" : 50,
   
-  "liquidCapacity" : 100000,
+  "liquidCapacity" : 7000,
   "liquidPushAmount" : 500,
-  "liquidPushRate" : 1,
+  "liquidPushMinPressure" : 1.0,
+  "liquidPushScalesWithPressure" : true,
+
+  "liquidPressures" : {
+    "water" : { "volumePerBar" : 100, "minVolumeBeforePressureBuild" : 2000, "maxBars" : 3.0 }
+  },
+
+  "conversions" : {
+    "tar" : { "requirement" : 350, "count" : 175, "name" : "crude", "byProduct" : "sourCoke", "byProductQty" : 175 },
+    "water" : { "requirement" : 350, "count" : -175, "name" : "sourCoke", "byProduct" : "sourWater", "byProductQty" : 175 },
+    "rainbows" : { "requirement" : "enough", "count" : "over 9000", "name" : "doge", "byProduct" : "hate", "byProductQty" : "pi"}
+  },
+  "allowedLiquids" : ["water","tar","sourWater","sourCoke","crude","wetCoke"],
+  "liquidDrainIds" : {
+    "water" : [],
+    "tar" : []
+  },
+  "liquidInputIds":{
+    "water" : [3, 4, 5],
+    "tar" : [1, 2]
+  },
 
   "recipeGroup" : "coker_basic",
   "openSounds" : [ "/sfx/objects/campfire_use.wav" ],

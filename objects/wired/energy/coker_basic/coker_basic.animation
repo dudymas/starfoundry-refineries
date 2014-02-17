@@ -1,0 +1,48 @@
+{
+  "animatedParts" : {
+    "stateTypes" : {
+      "nullState" : {
+        "default" : "off",
+        "states" : {
+          "off" : {}
+        }
+      },
+      "cooking" : {
+        "priority" : 0,
+        "default" : "idle",
+        "states" : {
+          "idle" : {
+            "frames" : 1
+          },
+          "cook" : {
+            "frames" : 4,
+            "cycle" : 0.5,
+            "mode" : "loop"
+          }
+        }
+      }
+    },
+    "parts" : {
+      "furnace" : {
+        "properties" : {
+          "image" : "<partImage>",
+          "centered" : false
+        },
+        "partStates" : {
+          "cooking" : {
+            "idle" : {
+              "properties" : {
+                "image" : "<partImage>:idle"
+              }
+            },
+            "cook" : {
+              "properties" : {
+                "image" : "<partImage>:cook.<frame>"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "input" : [
+    { "item" : "money", "count" : 1 }
+  ],
+  "output" : {
+    "item" : "coker_basic",
+    "count" : 1
+  },
+  "groups" : [ "foundry", "all", "energy", "pipes" ]
+}

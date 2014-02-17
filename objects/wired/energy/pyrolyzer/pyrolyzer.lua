@@ -158,10 +158,10 @@ function roomForConversion()
 end
 
 function roomForByproduct()
-  if storedLiquidLevel() > 0 and not (storedLiquidType() == genericConverter.product(storedOre()).byproduct) then
+  if storedLiquidLevel() > 0 and not (storedLiquidType() == genericConverter.product(storedOre()).byProduct) then
     return false
   else
-    return (storedLiquidLevel() + genericConverter.product(storedOre()).byproductQty) < self.capacity
+    return (storedLiquidLevel() + genericConverter.product(storedOre()).byProductQty) < self.capacity
   end
 end
 
@@ -197,8 +197,8 @@ function tryPushingProduct()
 end
 
 function storeByproducts()
-  storage.liquid[1] = genericConverter.liquidMap[genericConverter.product(storedOre()).byproduct]
-  updateLiquidLevel(genericConverter.product(storedOre()).byproductQty)
+  storage.liquid[1] = genericConverter.liquidMap[genericConverter.product(storedOre()).byProduct]
+  updateLiquidLevel(genericConverter.product(storedOre()).byProductQty)
 end
 
 function beforeItemPut(item, nodeId)

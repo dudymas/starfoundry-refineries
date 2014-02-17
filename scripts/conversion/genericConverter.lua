@@ -1,7 +1,7 @@
 
 genericConverter = {}
 
-genericConverter.emptyProduct = {requirement = -1,  count = -1, name = "empty", byproduct = "nil", byproductQty = -1}
+genericConverter.emptyProduct = {requirement = -1,  count = -1, name = "empty", byProduct = "nil", byProductQty = -1}
 
 genericConverter.liquidMap = {}
 genericConverter.liquidMap["water"] = 1
@@ -16,24 +16,24 @@ genericConverter.liquidMap[4] = "poison"
 genericConverter.liquidMap[6] = "juice"
 genericConverter.liquidMap[7] = "tar"
 
+--upcoming liquids
+--genericConverter.liquidMap["hotPitch"] = -1 -- made from boiler and also output by pyrolyzer (later)
+--genericConverter.liquidMap["gaseousWoodAlcohol"] = -1 -- byProduct from pyrolyzing wood
+--genericConverter.liquidMap["woodAlcohol"] = -1 -- made in a condenser by processing gaseousWoodAlcohol
+--genericConverter.liquidMap["bitumen"] = -1 -- made by pyrolyzing tar blocks... product will be asphalt
+--genericConverter.liquidMap["synbit"] = -1 -- made by pyrolyzing tar when there is wood alcohol in pyrolyzer tank
+genericConverter.liquidMap["sourCoke"] = -1 -- after heating tar, cokes are mixed with byproducts. this can only be cleaned with water
+genericConverter.liquidMap["sourWater"] = -1 -- made in coker, from adding water to hot pitch/tar
+genericConverter.liquidMap["wetCoke"] = -1 -- product from coker... separates into sour water and needle coke in a pneumatic pump
+genericConverter.liquidMap["crude"] = -1 -- product from coker ... tar reduces to crude
+
 getn = getn or function ( map )
 	local result = 0
-	for i,_ in ipairs(map) do
-		result = i
+	for _,_ in pairs(map) do
+		result = result + 1
 	end
 	return result
 end
-
-    --upcoming liquids
-    --self.liquidMap["hotPitch"] = -1 -- made from boiler and also output by pyrolyzer (later)
-    --self.liquidMap["gaseousWoodAlcohol"] = -1 -- byproduct from pyrolyzing wood
-    --self.liquidMap["woodAlcohol"] = -1 -- made in a condenser by processing gaseousWoodAlcohol
-    --self.liquidMap["bitumen"] = -1 -- made by pyrolyzing tar blocks... product will be asphalt
-    --self.liquidMap["synbit"] = -1 -- made by pyrolyzing tar when there is wood alcohol in pyrolyzer tank
-    --self.liquidMap["sourWater"] = -1 -- made in coker, from adding water to hot pitch/tar
-    --self.liquidMap["wetCoke"] = -1 -- product from coker... separates into sour water and needle coke in a pneumatic pump
-    --self.liquidMap["pretrol"] = -1 -- byproduct from coker and the mixture of water and hot pitch
-
 
 function genericConverter.config( configFctn )
 	genericConverter.cookTimer = 0
@@ -41,12 +41,8 @@ function genericConverter.config( configFctn )
 	genericConverter.cookRate = configFctn("cookRate")
 	genericConverter.conversions = configFctn("conversions") or {}
 	genericConverter.productIngredients = configFctn("productIngredients") or {}
+	genericConverter.storageLimits = configFctn("storageLimits") or {}
 
-	for ingredientName,conversion in pairs(genericConverter.conversions) do
-		local productIngredients = genericConverter.productIngredients[conversion.name] or {}
-		productIngredients[ingredientName] = conversion.requirement
-		genericConverter.productIngredients[conversion.name] = productIngredients
-	end
 end
 
 function genericConverter.statusMessage( ingredients )
@@ -54,19 +50,35 @@ function genericConverter.statusMessage( ingredients )
 	if ingredients then
 		if ingredients.name then
 			result = result .. "Trying to convert "..ingredients.name..".\n"
-		end
-		if genericConverter.canConvert(ingredients) then
-			local conversion = genericConverter.convert(ingredients)
-			result = result .. "I can convert this into "..conversion.name.."\n"..
-				"with a byproduct of "..conversion.byproduct..".\n"..
-				"This requires "..conversion.requirement.." of "..ingredients.name..".\n"
 		else
-			result = result .. "I cannot find a conversion for this."
+			result = result .. "Trying to convert { "
+			for k,v in pairs(ingredients) do
+				result = result .. " " .. (v.name or k) .. " : " .. (v.count or v) .. " ,  "
+			end
+			result = result .. " } \n"
 		end
+		result = result .. genericConverter.conversionStatus(ingredients)
 	else
 		result = result .. "There are no ingredients to convert.\n"
 	end
 	result = result .. "There are "..getn(genericConverter.conversions).." conversions that I know of."
+	return result
+end
+
+function genericConverter.conversionStatus( ingredients )
+	local result = ""
+	if ingredients.name then
+		if genericConverter.canConvert(ingredients) then
+			local conversion = genericConverter.convert(ingredients)
+			result = result .. "I can convert this into "..conversion.name.."\n"..
+				"with a byProduct of "..conversion.byProduct..".\n"..
+				"This requires "..conversion.requirement.." of "..ingredients.name..".\n"
+		else
+			result = result .. "I cannot find a conversion for this. "
+		end
+	else
+		result = result .. "I'm not sure how to status multiple ingredients yet. "
+	end
 	return result
 end
 
@@ -75,7 +87,8 @@ function genericConverter.resetTimer()
 end
 
 function genericConverter.cookTimerFinished()
-  return genericConverter.cookTimer >= genericConverter.cookRate
+	if not genericConverter.cookTimer then genericConverter.resetTimer() end
+  return not genericConverter.cookRate or genericConverter.cookTimer >= genericConverter.cookRate
 end
 
 function genericConverter.updateTimer(timeDelta)
@@ -93,13 +106,9 @@ function genericConverter.product( ingredients )
   	local result = {}
   	local haveResults = false
   	for _,ingredient in pairs(ingredients) do
-  		if genericConverter.canConvert(ingredient) then
-  			local conversion = genericConverter.convert(ingredient)
-  			if conversion.requirement and ingredient.count and conversion.requirement <= ingredient.count then
-  				result[conversion.name] = conversion.count
-  				haveResults = true
-  				return result --only allow one conversion for now.. simultaneous is incoming later
-  			end
+  		if genericConverter.canConvert(ingredient, ingredients) then
+  			result[ingredient.name] = genericConverter.convert(ingredient)
+  			haveResults = true
   		end
   	end
   	return haveResults and result or genericConverter.emptyProduct
@@ -107,7 +116,7 @@ function genericConverter.product( ingredients )
 end
 
 function genericConverter.productNotEmpty( ingredients )
-	return genericConverter.product(ingredients).byproduct ~= genericConverter.emptyProduct
+	return genericConverter.product(ingredients).byProduct ~= genericConverter.emptyProduct
 end
 
 function genericConverter.convert( item )
@@ -118,8 +127,59 @@ function genericConverter.convert( item )
 	end
 end
 
-function genericConverter.canConvert( item )
-	return genericConverter.convert(item) ~= nil
+function genericConverter.canConvert( item, ingredients )
+	local conversion = genericConverter.convert(item)
+	if conversion and not genericConverter.roomFor(conversion, ingredients) then
+		return false
+	end
+	if ingredients and conversion and genericConverter.isReduction(conversion) then
+		return genericConverter.canReduce(conversion, ingredients)
+	else
+		return conversion ~= nil and conversion.count > 0 and conversion.requirement <= item.count
+	end
+end
+
+function genericConverter.roomFor( conversion, ingredients )
+	local limits = genericConverter.storageLimits
+	local productLimit, byProductLimit = limits[conversion.name], limits[conversion.byProduct]
+	if productLimit then
+		local stored = ingredients[conversion.name] or { count = 0 }
+		if stored.count + conversion.count > productLimit then return false end
+	end
+	if byProductLimit then
+		local stored = ingredients[conversion.byProduct] or { count = 0 }
+		if stored.count + conversion.byProductQty > byProductLimit then return false end
+	end
+	return true
+end
+
+function genericConverter.isReduction( conversion )
+	return conversion.count < 0 or conversion.byProductQty and conversion.byProductQty < 0
+end
+
+function genericConverter.getReducedIngredients( reduction, ingredients )
+	local result = {}
+	if reduction.count < 0 then
+		local reductant = ingredients[reduction.name] or {count = 0}
+		result[reduction.name] = reductant.count + reduction.count
+	end
+	if reduction.byProductQty and reduction.byProductQty < 0 then
+		local reductant = ingredients[reduction.byProduct] or {count = 0}
+		result[reduction.byProduct] = reductant.count + reduction.byProductQty
+	end
+	return result
+end
+
+function genericConverter.canReduce( reduction, ingredients )
+	local reducedIngredients = genericConverter.getReducedIngredients(reduction, ingredients)
+	if reducedIngredients then
+		for reducedIngredient,reduction in pairs(reducedIngredients) do
+			if reduction < 0 then return false end
+		end
+		return true
+	else
+		return false
+	end
 end
 
 function genericConverter.conversionsFilter()
@@ -130,32 +190,64 @@ function genericConverter.conversionsFilter()
   return pullFilter
 end
 
+function genericConverter.canCook( ... )
+	local ingredients = genericConverter.flattenIngredients(table.pack(...))
+	local products = genericConverter.product(ingredients)
+	return products ~= genericConverter.emptyProduct
+end
+
 function genericConverter.cook( ... )
-	local ingredients = genericConverter.flattenIngredients(args)
+	if not genericConverter.cookTimerFinished() then
+		genericConverter.updateTimer(entity.dt())
+		return {}
+	end
+	local ingredients = genericConverter.flattenIngredients(table.pack(...))
 	local products = genericConverter.product(ingredients)
 	if products ~= genericConverter.emptyProduct then
+		genericConverter.resetTimer()
 		return genericConverter.productsAndConsumedIngredients(products, ingredients)
+	else
+		return {}
 	end
 end
 
 function genericConverter.flattenIngredients( ingredientArrays )
 	local result = {}
 	for _,itemMap in ipairs(ingredientArrays) do
-		for itemName,ingredient in ipairs(itemMap) do
+		for itemName,ingredient in pairs(itemMap or {}) do
 			ingredient = ingredient.name and ingredient or {name = itemName, count = ingredient}
-  		result[ingredientName] = ingredient
-		end
+  			result[itemName] = {name = ingredient.name, count = ingredient.count}
+  		end
 	end
 	return result
 end
 
-function genericConverter.productsAndConsumedIngredients( products, ingredients )
-	local result = products
-	for productName,amount in pairs(products) do
-		local consumedIngredients = genericConverter.productIngredients[productName]
-		for ingredientName,amountConsumed in pairs(consumedIngredients) do
-			result[ingredientName] = ingredients[ingredientName].count - amountConsumed
+function genericConverter.addIngredientUpdate( ingredientUpdates, update )
+	if not update.name then return {count = 0} end
+	local update = ingredientUpdates[update.name] or update
+	ingredientUpdates[update.name] = update
+	return update
+end
+
+function genericConverter.updateIngredients( ingredientUpdates, ingredient, conversion )
+	local updatedIngredient = genericConverter.addIngredientUpdate(ingredientUpdates, ingredient)
+	local product = genericConverter.addIngredientUpdate( ingredientUpdates, {name = conversion.name, count = 0})
+	local byProduct = genericConverter.addIngredientUpdate( ingredientUpdates, {name = conversion.byProduct, count = 0})
+	if genericConverter.canConvert(updatedIngredient, ingredientUpdates) then
+		updatedIngredient.count = updatedIngredient.count - math.max(conversion.requirement, 0)
+		product.count = product.count + conversion.count
+		if conversion.byProductQty then
+			byProduct.count = byProduct.count + conversion.byProductQty
 		end
+	end
+	return ingredientUpdates
+end
+
+function genericConverter.productsAndConsumedIngredients( products, ingredients )
+	local result = ingredients
+	for consumedIngredientName,conversion in pairs(products) do
+		local ingredient = ingredients[consumedIngredientName]
+		result = genericConverter.updateIngredients(result, ingredient, conversion)
 	end
 	return result
 end

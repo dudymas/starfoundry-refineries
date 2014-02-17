@@ -1,0 +1,6 @@
+
+require 'guard/shell'
+
+guard :shell do
+	watch(%'.*\.lua') { `busted .` }
+end
